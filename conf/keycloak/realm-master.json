@@ -1,0 +1,18 @@
+{
+  "id": "master",
+  "realm": "master",
+  "sslRequired": "none",
+  "loginTheme": "keycloak",
+  "accountTheme": "keycloak.v2",
+  "adminTheme": "keycloak.v2",
+  "emailTheme": "keycloak",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "admin-cli",
+      "attributes": {
+        "access.token.lifespan": "300"
+      }
+    }
+  ]
+}

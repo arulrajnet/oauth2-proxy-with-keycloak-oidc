@@ -1,0 +1,42 @@
+{
+  "id": "demo",
+  "realm": "demo",
+  "sslRequired": "none",
+  "loginTheme": "keycloak",
+  "accountTheme": "keycloak.v2",
+  "adminTheme": "keycloak.v2",
+  "emailTheme": "keycloak",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "$(env:OAUTH_CLIENT_ID)",
+      "name": "Demo",
+      "description": "This is the demo client.",
+      "rootUrl": "$(env:PORTAL_PROTOCOL:-https)://$(env:SERVER_FQDN)/",
+      "adminUrl": "",
+      "baseUrl": "$(env:PORTAL_PROTOCOL:-https)://$(env:SERVER_FQDN)/",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "$(env:OAUTH_CLIENT_SECRET)",
+      "redirectUris": [
+        "$(env:PORTAL_PROTOCOL:-https)://$(env:SERVER_FQDN)/oauth2/callback"
+      ],
+      "webOrigins": [
+        "$(env:PORTAL_PROTOCOL:-https)://$(env:SERVER_FQDN)"
+      ],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "publicClient": false,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect"
+    }
+  ],
+  "keycloakVersion": "22.0.0"
+}

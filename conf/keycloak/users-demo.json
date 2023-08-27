@@ -1,0 +1,24 @@
+{
+  "realm" : "demo",
+  "users" : [ {
+    "id" : "68f5d5ea-4818-4065-8f49-45adb37d31da",
+    "username" : "demo@arulraj.net",
+    "enabled" : true,
+    "totp" : false,
+    "emailVerified" : true,
+    "firstName" : "Demo",
+    "lastName" : "User",
+    "email" : "demo@arulraj.net",
+    "credentials" : [ {
+      "id" : "04ff3bd0-adf7-494d-b60c-ee720fcafdb3",
+      "type" : "password",
+      "userLabel" : "My password",
+      "secretData" : "{\"value\":\"53j/HJl3UBXVkf+3YVzFEt/PhgCjFSosRvuwjKA1c84=\",\"salt\":\"4GIKCTPiLSey591Spx8kew==\",\"additionalParameters\":{}}",
+      "credentialData" : "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
+    } ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "notBefore" : 0,
+    "groups" : [ ]
+  } ]
+}

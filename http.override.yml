@@ -1,0 +1,15 @@
+version: '3.9'
+
+services:
+
+  traefik:
+    command:
+      - --log.level=DEBUG
+      - --accesslog=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.watch=true
+      - --entryPoints.websecure.address=:80
+    ports:
+      - 80:80
+      - 8080

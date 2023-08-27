@@ -1,0 +1,39 @@
+version: '3.9'
+
+services:
+
+  traefik:
+    command:
+      - --log.level=DEBUG
+      - --accesslog=true
+      - --certificatesResolvers.leresolver.acme.email=${LE_ACCOUNT_EMAIL}
+      - --certificatesResolvers.leresolver.acme.storage=/le/acme.json
+      - --certificatesResolvers.leresolver.acme.httpChallenge.entryPoint=web
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.watch=true
+      - --entryPoints.web.address=:80
+      - --entryPoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+    ports:
+      - 80:80
+      - 443:443
+      - 8080
+
+  traefik-forward-auth:
+    labels:
+      - traefik.http.routers.traefik-forward-auth.tls.certresolver=leresolver
+
+  whoami:
+    labels:
+      - traefik.http.routers.whoami.tls.certresolver=leresolver
+
+  nginx:
+    labels:
+      - traefik.http.routers.portal.tls.certresolver=leresolver
+
+  keycloak:
+    labels:
+      - traefik.http.routers.keycloak.tls.certresolver=leresolver
