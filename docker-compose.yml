@@ -160,6 +160,7 @@ services:
       KC_PROXY: edge
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_EXTRA_ARGS_PREPENDED: --spi-login-protocol-openid-connect-legacy-logout-redirect-uri=true
     # not recommended for production
     entrypoint: /opt/keycloak/bin/kc.sh start-dev
     # healthcheck:

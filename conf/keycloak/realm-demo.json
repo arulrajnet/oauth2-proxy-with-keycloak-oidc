@@ -36,6 +36,11 @@
       "publicClient": false,
       "frontchannelLogout": true,
       "protocol": "openid-connect",
+      "attributes": {
+        "backchannel.logout.session.required": "true",
+        "backchannel.logout.revoke.offline.tokens": "false",
+        "post.logout.redirect.uris": "$(env:PORTAL_PROTOCOL:-https)://$(env:SERVER_FQDN)/*"
+      },
       "defaultClientScopes": [
         "web-origins",
         "acr",
