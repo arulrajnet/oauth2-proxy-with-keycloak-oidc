@@ -162,7 +162,7 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: admin
       KEYCLOAK_EXTRA_ARGS_PREPENDED: --spi-login-protocol-openid-connect-legacy-logout-redirect-uri=true
     # not recommended for production
-    entrypoint: /opt/keycloak/bin/kc.sh start-dev
+    entrypoint: /opt/keycloak/bin/kc.sh --spi-login-protocol-openid-connect-legacy-logout-redirect-uri=true start-dev
     # healthcheck:
     #   test: ["CMD-SHELL", "curl --fail http://localhost:8080/health"]
     #   interval: 30s
