@@ -20,7 +20,7 @@ services:
         condition: service_started
       whoami:
         condition: service_started
-      nginx:
+      httpbin:
         condition: service_started
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -55,6 +55,7 @@ services:
       - --provider=keycloak-oidc
       - --request-logging=true
       - --reverse-proxy=true
+      - --scope=openid profile email
       - --set-authorization-header=true
       - --set-xauthrequest=true
       - --standard-logging=true
@@ -69,9 +70,8 @@ services:
       traefik.enable: true
       traefik.http.routers.traefik-forward-auth.rule: Host(`${SERVER_FQDN}`) && PathPrefix(`/oauth2`)
       traefik.http.routers.traefik-forward-auth.entrypoints: websecure
-      traefik.http.routers.traefik-forward-auth.middlewares: traefik-forward-auth
       traefik.http.middlewares.traefik-forward-auth.forwardauth.address: http://traefik-forward-auth:4181
-      traefik.http.middlewares.traefik-forward-auth.forwardauth.authResponseHeaders: X-Forwarded-User
+      traefik.http.middlewares.traefik-forward-auth.forwardauth.authResponseHeaders: X-Forwarded-User,X-Forwarded-Groups,X-Forwarded-Email,X-Forwarded-Preferred-Username
       traefik.http.middlewares.traefik-forward-auth.forwardauth.authResponseHeadersRegex: ^X-
       traefik.http.middlewares.traefik-forward-auth.forwardauth.trustForwardHeader: true
       traefik.http.services.traefik-forward-auth.loadbalancer.server.port: 4181
@@ -89,17 +89,17 @@ services:
       traefik.http.routers.whoami.entrypoints: websecure
       traefik.http.services.whoami.loadbalancer.server.port: 80
 
-  nginx:
+  httpbin:
     <<: *default
-    image: nginx:${NGINX_VERSION}
+    image: kennethreitz/httpbin:${HTTPBIN_VERSION}
     ports:
       - 80
     labels:
       traefik.enable: true
-      traefik.http.routers.nginx.rule: Host(`${SERVER_FQDN}`) && PathPrefix(`/`)
-      traefik.http.routers.nginx.middlewares: traefik-forward-auth
-      traefik.http.routers.nginx.entrypoints: websecure
-      traefik.http.services.nginx.loadbalancer.server.port: 80
+      traefik.http.routers.httpbin.rule: Host(`${SERVER_FQDN}`) && PathPrefix(`/`)
+      traefik.http.routers.httpbin.middlewares: traefik-forward-auth
+      traefik.http.routers.httpbin.entrypoints: websecure
+      traefik.http.services.httpbin.loadbalancer.server.port: 80
 
   pgsql:
     <<: *default
