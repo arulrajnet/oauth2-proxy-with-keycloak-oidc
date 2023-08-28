@@ -1,0 +1,198 @@
+version: '3.9'
+
+x-default: &default
+  restart: on-failure
+  dns:
+    - 1.1.1.1
+    - 1.0.0.1
+
+volumes:
+  pg_data:
+  acme_data:
+
+services:
+
+  traefik:
+    <<: *default
+    image: traefik:${TRAEFIK_VERSION}
+    depends_on:
+      traefik-forward-auth:
+        condition: service_started
+      whoami:
+        condition: service_started
+      httpbin:
+        condition: service_started
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - acme_data:/le
+    networks:
+      default:
+        aliases:
+          - ${SERVER_FQDN}
+
+  traefik-forward-auth:
+    <<: *default
+    image: quay.io/oauth2-proxy/oauth2-proxy:${OAUTH2_PROXY_VERSION}
+    ports:
+      - 4181
+    command:
+      - --client-id=${OAUTH_CLIENT_ID}
+      - --client-secret=${OAUTH_CLIENT_SECRET}
+      - --cookie-domain=${SERVER_FQDN}
+      - --cookie-expire=1h
+      - --cookie-httponly=true
+      - --cookie-name=_demo_session
+      - --cookie-refresh=30m
+      - --cookie-secret=${OAUTH_COOKIE_SECRET}
+      - --cookie-secure=${OAUTH_COOKIE_SECURE}
+      - --email-domain=*
+      - --http-address=0.0.0.0:4181
+      - --logging-filename=/dev/stdout
+      - --oidc-issuer-url=${PORTAL_PROTOCOL}://${SERVER_FQDN}/auth/realms/demo
+      - --pass-access-token=true
+      - --pass-user-headers=true
+      - --provider-display-name=Keycloak
+      - --provider=keycloak-oidc
+      - --request-logging=true
+      - --reverse-proxy=true
+      - --scope=openid profile email
+      - --set-authorization-header=true
+      - --set-xauthrequest=true
+      - --standard-logging=true
+      - --whitelist-domain=*.${SERVER_FQDN}
+      # don't set traefik error page.
+      - --skip-provider-button=true
+      - --upstream=static://202
+    depends_on:
+      keycloak:
+        condition: service_started
+    labels:
+      traefik.enable: true
+      traefik.http.routers.traefik-forward-auth.rule: Host(`${SERVER_FQDN}`) && PathPrefix(`/oauth2`)
+      traefik.http.routers.traefik-forward-auth.entrypoints: websecure
+      traefik.http.middlewares.traefik-forward-auth.forwardauth.address: http://traefik-forward-auth:4181
+      traefik.http.middlewares.traefik-forward-auth.forwardauth.authResponseHeaders: X-Forwarded-User,X-Forwarded-Groups,X-Forwarded-Email,X-Forwarded-Preferred-Username
+      traefik.http.middlewares.traefik-forward-auth.forwardauth.authResponseHeadersRegex: ^X-
+      traefik.http.middlewares.traefik-forward-auth.forwardauth.trustForwardHeader: true
+      traefik.http.services.traefik-forward-auth.loadbalancer.server.port: 4181
+
+  whoami:
+    <<: *default
+    image: traefik/whoami:${TRAEFIK_WHOAMI_VERSION}
+    ports:
+      - 80
+    labels:
+      traefik.enable: true
+      traefik.http.routers.whoami.rule: Host(`${SERVER_FQDN}`) && PathPrefix(`/whoami`)
+      traefik.http.routers.whoami.priority: 200
+      traefik.http.routers.whoami.middlewares: traefik-forward-auth
+      traefik.http.routers.whoami.entrypoints: websecure
+      traefik.http.services.whoami.loadbalancer.server.port: 80
+
+  httpbin:
+    <<: *default
+    image: kennethreitz/httpbin:${HTTPBIN_VERSION}
+    ports:
+      - 80
+    labels:
+      traefik.enable: true
+      traefik.http.routers.httpbin.rule: Host(`${SERVER_FQDN}`) && PathPrefix(`/`)
+      traefik.http.routers.httpbin.middlewares: traefik-forward-auth
+      traefik.http.routers.httpbin.entrypoints: websecure
+      traefik.http.services.httpbin.loadbalancer.server.port: 80
+
+  pgsql:
+    <<: *default
+    image: postgres:${PGSQL_VERSION}
+    ports:
+      - 5432
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      PGDATA: /data/postgres
+    volumes:
+      - pg_data:/data/postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-U", "postgres"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 1m
+
+  keycloak:
+    <<: *default
+    image: quay.io/keycloak/keycloak:${KC_VERSION}
+    depends_on:
+      pgsql:
+        condition: service_healthy
+    ports:
+      - 8080:8080
+      # admin console
+      - 9990
+    environment:
+      KC_DB: postgres
+      KC_DB_USERNAME: ${DB_USER}
+      KC_DB_PASSWORD: ${DB_PASSWORD}
+      KC_DB_SCHEMA: public
+      KC_DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+      KC_DB_URL_DATABASE: ${DB_NAME}
+      KC_DB_URL_HOST: ${DB_HOST}
+      KC_DB_URL_PORT: ${DB_PORT}
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_PATH: /auth
+      KC_HTTP_RELATIVE_PATH: /auth
+      KC_FEATURES:
+        authorization
+        client-policies
+        docker
+        dynamic-scopes
+        impersonation
+        map-storage
+        scripts
+        token-exchange
+        upload-scripts
+        web-authn
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_PORT: 8080
+      KC_METRICS_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      KC_PROXY: edge
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_EXTRA_ARGS_PREPENDED: --spi-login-protocol-openid-connect-legacy-logout-redirect-uri=true
+    # not recommended for production
+    entrypoint: /opt/keycloak/bin/kc.sh start-dev
+    # healthcheck:
+    #   test: ["CMD-SHELL", "curl --fail http://localhost:8080/health"]
+    #   interval: 30s
+    #   timeout: 30s
+    #   retries: 3
+    #   start_period: 1m
+    labels:
+      traefik.enable: true
+      traefik.http.routers.keycloak.rule: (PathPrefix(`/auth/realms`) || PathPrefix(`/auth/resources`) || PathPrefix(`/auth/js`))
+      traefik.http.routers.keycloak.entrypoints: websecure
+      traefik.http.services.keycloak.loadbalancer.server.port: 8080
+
+  keycloak-config-cli:
+    <<: *default
+    image: adorsys/keycloak-config-cli:${KC_CONFIG_CLI_VERSION}
+    depends_on:
+      pgsql:
+        condition: service_started
+    environment:
+      KEYCLOAK_URL: http://keycloak:8080/auth/
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: admin
+      KEYCLOAK_AVAILABILITYCHECK_ENABLED: true
+      KEYCLOAK_AVAILABILITYCHECK_TIMEOUT: 120s
+      IMPORT_FILES_LOCATIONS: '/config/*'
+      IMPORT_VARSUBSTITUTION_ENABLED: true
+      # Env's for the config files
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      PORTAL_PROTOCOL: ${PORTAL_PROTOCOL}
+      SERVER_FQDN: ${SERVER_FQDN}
+    volumes:
+      - ${PWD}/conf/keycloak:/config

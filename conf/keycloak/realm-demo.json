@@ -1,0 +1,89 @@
+{
+  "id": "demo",
+  "realm": "demo",
+  "sslRequired": "none",
+  "loginTheme": "keycloak",
+  "accountTheme": "keycloak.v2",
+  "adminTheme": "keycloak.v2",
+  "emailTheme": "keycloak",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "$(env:OAUTH_CLIENT_ID)",
+      "name": "Demo",
+      "description": "This is the demo client.",
+      "rootUrl": "$(env:PORTAL_PROTOCOL:-https)://$(env:SERVER_FQDN)/",
+      "adminUrl": "",
+      "baseUrl": "$(env:PORTAL_PROTOCOL:-https)://$(env:SERVER_FQDN)/",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "$(env:OAUTH_CLIENT_SECRET)",
+      "redirectUris": [
+        "$(env:PORTAL_PROTOCOL:-https)://$(env:SERVER_FQDN)/oauth2/callback"
+      ],
+      "webOrigins": [
+        "$(env:PORTAL_PROTOCOL:-https)://$(env:SERVER_FQDN)"
+      ],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "publicClient": false,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect",
+      "attributes": {
+        "backchannel.logout.session.required": "true",
+        "backchannel.logout.revoke.offline.tokens": "false",
+        "post.logout.redirect.uris": "$(env:PORTAL_PROTOCOL:-https)://$(env:SERVER_FQDN)/*"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "audience",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    }
+  ],
+  "clientScopes": [
+    {
+      "id": "b2f51a2e-6781-4cec-af46-f5443997ad32",
+      "name": "audience",
+      "description": "",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "gui.order": "",
+        "consent.screen.text": ""
+      },
+      "protocolMappers": [
+        {
+          "id": "050954df-c273-4605-a993-1d359d18d865",
+          "name": "audience-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "$(env:OAUTH_CLIENT_ID)",
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "keycloakVersion": "22.0.0"
+}
